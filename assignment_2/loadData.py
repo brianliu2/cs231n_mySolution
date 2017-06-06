@@ -4,6 +4,7 @@ Created on Thu Jun  1 13:52:30 2017
 
 @author: xliu
 """
+
 import numpy as np
 import pickle
 import os
@@ -72,3 +73,36 @@ def subsampleData(X_train, y_train, X_test, y_test, num_training=49000, num_vali
       'X_val': X_val, 'y_val': y_val,
       'X_test': X_test, 'y_test': y_test,
     }
+				
+######## self-run ################
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Jun  1 13:49:29 2017
+
+@author: xliu
+"""
+if __name__ == '__main__':
+	
+	# load-in data
+	# define the root of data files
+	cifar10_dir = os.path.join('/Users/xliu/Documents/MRC/Work/Online course/',
+	    'CS231N Convolutional Neural Networks for Visual Recognition/',
+	'assignment1/assignment1/cs231n/datasets/cifar-10-batches-py')
+	
+	read_data = True
+	
+	if read_data == True:
+		X_train, y_train, X_test, y_test = load_CIFAR10(cifar10_dir)
+		
+		# As a sanity check, we print out the size of the training and test data.
+		print('Training data shape: ', X_train.shape)
+		print('Training labels shape: ', y_train.shape)
+		print('Test data shape: ', X_test.shape)
+		print('Test labels shape: ', y_test.shape)
+		
+		
+		data = subsampleData(X_train, y_train, X_test, y_test)
+		for k, v in data.items():
+		    print('%s: ' % k, v.shape)
+	
+	print('data has been read.')

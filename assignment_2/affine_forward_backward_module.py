@@ -8,6 +8,8 @@ For example, affine layers are frequently followed by a ReLU nonlinearity.
 
 import numpy as np
 from sep_forward_back_module import *
+from batch_normalization import *
+from dropout import *
 
 def affine_relu_forward(X, W, b):
     '''
@@ -55,10 +57,87 @@ def affine_relu_backward(dout, cache):
     return dx, dw, db
 
 
+def affine_bn_relu_forward(X, W, b, gamma, beta, bn_param):
+	# 0. initialization	
+	relu_out, matmul_bn_relu_input_info = 0, None
+	
+	# 1. matrix multiplication
+	matmul_out, matmul_input_info = affine_forward(X, W, b)
+	
+	# 2. batch normalization
+	bn_out, bn_input_info = batchnorm_forward_allQuantities(matmul_out,\
+							  gamma, beta, bn_param)
+	
+	# 3. relu --> output
+	relu_out, relu_input_info = relu_forward(bn_out)
+	
+	# 4. store inputs from three layers
+	matmul_bn_relu_input_info = (matmul_input_info,\
+								   bn_input_info, relu_input_info)
+	
+	return relu_out, matmul_bn_relu_input_info
 
+def affine_bn_relu_backward(dout, three_layers_input_info):
+	# 0. unpack all input information from three layers
+	# matrix multiplication --> batch normalization --> ReLu
+	matmul_input_info, bn_input_info, relu_input_info = three_layers_input_info
+	
+	# 1. backprob through relu
+	drelu_layer = relu_backward(dout, relu_input_info)
+	
+	# 2. backprob through batch normalization layer
+	dbn_layer_input, dgamma, dbeta = batchnorm_backward(drelu_layer, bn_input_info)
+	
+	# 3. backprob through matrix multiplication layer
+	dX, dW, db = affine_backward(dbn_layer_input, matmul_input_info)
+	
+	# 4. return gradients
+	return dX, dW, db, dgamma, dbeta
 
-
-
+def affine_bn_relu_dropout_forward(X, W, b, gamma, beta, bn_param, dropout_param):
+	# 1. initialize out and four layers input information tuple
+	dropout_out, matmul_bn_relu_dropout_input_info = None, None
+	
+	# 2. layer_1: matrix multiplication
+	matmul_out, matmul_input_info = affine_forward(X, W, b)
+	
+	# 3. layer_2: batch normalization
+	bn_out, bn_input_info = batchnorm_forward_allQuantities(matmul_out, gamma, beta, bn_param)
+	
+	# 4. layer_3: ReLu
+	relu_out, relu_input_info = relu_forward(bn_out)
+	
+	# 5. layer_4: dropout
+	dropout_out, dropout_input_info = dropout_forward(relu_out, dropout_param)
+	
+	# 6. create input information tuple
+	matmul_bn_relu_dropout_input_info = (matmul_input_info, bn_input_info,\
+											relu_input_info, dropout_input_info)
+	
+	# 7. return outputs and tuple
+	return dropout_out, matmul_bn_relu_dropout_input_info
+	
+def affine_bn_relu_dropout_backward(dout, four_layers_input_info):
+	# 0. retrieve input info for all four layers
+	matmul_input_info, bn_input_info, \
+	relu_input_info, dropout_input_info = four_layers_input_info
+	
+	# 1. initialize grads
+	dX, dW, db, dgamma, dbeta = None, None, None, None, None
+	
+	# 2. backprop through dropout
+	dX_dropout = dropout_backward(dout, dropout_input_info)
+	
+	# 3. backprop through relu
+	drelu = relu_backward(dX_dropout, relu_input_info)
+	
+	# 4. backprop through batch normalization
+	dbatch_norm, dgamma, dbeta = batchnorm_backward(drelu, bn_input_info)
+	
+	# 5. backprop through matri multiplication
+	dX, dW, db = affine_backward(dbatch_norm, matmul_input_info)
+	
+	return dX, dW, db, dgamma, dbeta
 
 if __name__ == '__main__':
 	x = np.random.randn(2, 3, 4)

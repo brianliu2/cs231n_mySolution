@@ -57,3 +57,7 @@ def eval_numerical_gradient(f, x, verbose=True, h=0.00001):
         it.iternext() # step to next dimension
 
     return grad
+
+def rel_error(x, y):
+    '''returns relative error'''
+    return np.max(np.abs(x - y) / (np.maximum(1e-8, np.abs(x) + np.abs(y))))
