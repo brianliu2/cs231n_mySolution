@@ -272,7 +272,7 @@ def adam(w, dw, config = None):
 	
 	momentum_hat = momentum / (1 - (decay_rate_moment)**iteration)
 	velocity_hat = velocity / (1 - (decay_rate_velocity)**iteration)
-	next_w = w - learning_rate * momentum_hat / (np.sqrt(velocity_hat) + epsilon)
+	next_w = w - learning_rate * momentum_hat / (np.sqrt(velocity_hat + epsilon))
 	
 	config['momentum'] = momentum
 	config['velocity'] = velocity
